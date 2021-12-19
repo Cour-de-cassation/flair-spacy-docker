@@ -1,0 +1,39 @@
+name: 🐳 Build & Test
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    name: 🐳 Build docker image
+    runs-on: ubuntu-latest
+    env:
+      APP_ID: flair
+      DOCKER_USERNAME: opendatajustice
+      VERSION: 0.10.0
+    steps:
+      - uses: actions/checkout@v1
+      - name: 🐋 Check if build is needed
+        run: |
+          DOCKER_IMAGE=${DOCKER_USERNAME}/${APP_ID}:${VERSION}
+          echo "##[set-output name=status;]$( (docker pull ${DOCKER_IMAGE} > /dev/null 2>&1) || echo build_needed)"
+        id: docker_check
+      - name: 🐋 Build docker image
+        if: steps.docker_check.outputs.status == 'build_needed'
+        run: |
+          DOCKER_IMAGE=${DOCKER_USERNAME}/${APP_ID}:${VERSION}
+          docker build --no-cache --build-arg VERSION=${VERSION} -t ${DOCKER_IMAGE} .
+      - name: 🚀 Push docker image
+        if: (steps.docker_check.outputs.status == 'build_needed') && (github.event_name == 'push') && (github.ref == 'refs/heads/master')
+        run: |
+          echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+          docker push ${DOCKER_USERNAME}/${APP_ID}:${VERSION};
+          docker tag ${DOCKER_USERNAME}/${APP_ID}:${VERSION} ${DOCKER_USERNAME}/${APP_ID}:latest
+          docker push ${DOCKER_USERNAME}/${APP_ID}:latest
+          docker tag ${DOCKER_USERNAME}/${APP_ID}:${VERSION} ${DOCKER_USERNAME}/${APP_ID}
+          docker push ${DOCKER_USERNAME}/${APP_ID}
+        env:
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
