@@ -19,7 +19,7 @@ jobs:
       - name: 🐋 Check if build is needed
         run: |
           DOCKER_IMAGE=${DOCKER_USERNAME}/${APP_ID}:${VERSION}
-          echo "##[set-output name=status;]$( (docker pull ${DOCKER_IMAGE} > /dev/null 2>&1) || echo build_needed)"
+          echo "##[set-output name=status;]$( (docker manifest inspect ${DOCKER_IMAGE} > /dev/null 2>&1) || echo build_needed)"
         id: docker_check
       - name: 🐋 Build docker image
         if: steps.docker_check.outputs.status == 'build_needed'
