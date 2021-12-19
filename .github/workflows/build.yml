@@ -11,24 +11,28 @@ jobs:
     name: 🐳 Build docker image
     runs-on: ubuntu-latest
     env:
-      APP_ID: flair
+      APP_ID: flair-spacy
       DOCKER_USERNAME: opendatajustice
-      VERSION: 0.10.0
+      FLAIR_VERSION: 0.10.0
+      SPACY_VERSION: 2.1.6
     steps:
       - uses: actions/checkout@v1
       - name: 🐋 Check if build is needed
         run: |
+          VERSION=${FLAIR_VERSION}-${SPACY_VERSION}
           DOCKER_IMAGE=${DOCKER_USERNAME}/${APP_ID}:${VERSION}
           echo "##[set-output name=status;]$( (docker manifest inspect ${DOCKER_IMAGE} > /dev/null 2>&1) || echo build_needed)"
         id: docker_check
       - name: 🐋 Build docker image
         if: steps.docker_check.outputs.status == 'build_needed'
         run: |
-          DOCKER_IMAGE=${DOCKER_USERNAME}/${APP_ID}:${VERSION}
-          docker build --no-cache --build-arg VERSION=${VERSION} -t ${DOCKER_IMAGE} .
+          VERSION=${FLAIR_VERSION}-${SPACY_VERSION}
+          DOCKER_IMAGE=${DOCKER_USERNAME}/${APP_ID}:${FLAIR_VERSION}-${SPACY_VERSION}
+          docker build --no-cache --build-arg FLAIR_VERSION=${FLAIR_VERSION} --build-arg SPACY_VERSION=${SPACY_VERSION} -t ${DOCKER_IMAGE} .
       - name: 🚀 Push docker image
         if: (steps.docker_check.outputs.status == 'build_needed') && (github.event_name == 'push') && (github.ref == 'refs/heads/master')
         run: |
+          VERSION=${FLAIR_VERSION}-${SPACY_VERSION}
           echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
           docker push ${DOCKER_USERNAME}/${APP_ID}:${VERSION};
           docker tag ${DOCKER_USERNAME}/${APP_ID}:${VERSION} ${DOCKER_USERNAME}/${APP_ID}:latest
