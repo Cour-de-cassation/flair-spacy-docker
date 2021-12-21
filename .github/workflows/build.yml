@@ -14,7 +14,7 @@ jobs:
       APP_ID: flair-spacy
       DOCKER_USERNAME: opendatajustice
       FLAIR_VERSION: 0.10.0
-      SPACY_VERSION: 2.1.6
+      SPACY_VERSION: 3.2.1
     steps:
       - uses: actions/checkout@v1
       - name: 🐋 Check if build is needed
